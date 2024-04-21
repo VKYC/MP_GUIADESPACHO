@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="gmail_res_config_settings_view_form" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.google.gmail</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base_setup.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[hasclass('settings')]" position="inside">
+                <div class="app_settings_block social_settings_block" data-string="Office Guide" string="Office Guide" data-key="ofiice guide">
+                    <h2>Office Guide</h2>
+                    <div class="row mt16 o_settings_container" name="operations_setting_container">
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_right_pane">
+                                <label for="office_guide_base_url"/>
+                            </div>
+                            <div class="o_setting_right_pane">
+                                <field name="office_guide_base_url"/>
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_right_pane">
+                                <label for="office_guide_username"/>
+                            </div>
+                            <div class="o_setting_right_pane">
+                                <field name="office_guide_username"/>
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_right_pane">
+                                <label for="office_guide_password"/>
+                            </div>
+                            <div class="o_setting_right_pane">
+                                <field name="office_guide_password"/>
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_right_pane">
+                                <label for="office_guide_expiry_date"/>
+                            </div>
+                            <div class="o_setting_right_pane">
+                                <field name="office_guide_expiry_date" readonly="1"/>
+                            </div>
+                        </div>
+                        <div class="col-12 col-lg-6 o_setting_box">
+                            <div class="o_setting_right_pane">
+                                <label for="office_guide_token"/>
+                            </div>
+                            <div class="o_setting_right_pane">
+                                <field name="office_guide_token" readonly="1"/>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </xpath>
+        </field>
+    </record>
+</odoo>
