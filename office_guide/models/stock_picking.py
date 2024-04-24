@@ -10,6 +10,8 @@ class StockPicking(models.Model):
     dte_received_correctly = fields.Boolean(string='DTE Received Correctly', readonly=True, default=False)
     destination_partner_id = fields.Many2one('res.partner', string='Destination Partner')
     amount_total = fields.Float(string='Total Amount', default=0.0)
+    url_pdf = fields.Char(string='URL PDF', readonly=True)
+    binary_pdf = fields.Binary(string='Binary PDF', readonly=True)
     
     def get_daily_token(self):
         company = self.env.user.company_id
@@ -103,6 +105,7 @@ class StockPicking(models.Model):
             if data_binary_pdf_dte.get('error'):
                 raise ValidationError(_('Error al obtener el PDF del DTE: %s') % data_binary_pdf_dte['error'].get('detalleRespuesta'))
             binary_pdf = data_binary_pdf_dte['success'].get('detalleRespuesta')
+            self.binary_pdf = binary_pdf
         raise ValidationError(_('No se ha registrado el DTE correctamente'))
     
     def get_url_pdf_dte(self):
@@ -119,6 +122,7 @@ class StockPicking(models.Model):
             if data_url_pdf_dte.get('error'):
                 raise ValidationError(_('Error al obtener el PDF del DTE: %s') % data_url_pdf_dte['error'].get('detalleRespuesta'))
             url_pdf = data_url_pdf_dte['success'].get('detalleRespuesta')
+            self.url_pdf - url_pdf
         raise ValidationError(_('No se ha registrado el DTE correctamente'))
     
     def get_data_to_get_pdf_dte(self):

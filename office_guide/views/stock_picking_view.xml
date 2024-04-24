@@ -14,6 +14,8 @@
                 <field name="destination_partner_id" />
                 <field name="amount_total" />
                 <field name="dte_received_correctly" />
+                <field name="url_pdf" />
+                <field name="binary_pdf" />
             </xpath>
         </field>
     </record>
