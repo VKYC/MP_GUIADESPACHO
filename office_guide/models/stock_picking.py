@@ -8,6 +8,8 @@ class StockPicking(models.Model):
     _description = 'Stock Picking'
     
     dte_received_correctly = fields.Boolean(string='DTE Received Correctly', readonly=True, default=False)
+    destination_partner_id = fields.Many2one('res.partner', string='Destination Partner')
+    amount_total = fields.Float(string='Total Amount')
     
     def get_daily_token(self):
         company = self.env.user.company_id
@@ -31,6 +33,8 @@ class StockPicking(models.Model):
         return company.office_guide_token
     
     def get_register_single_dte(self):
+        if not self.destination_partner_id:
+            raise ValidationError(_('Debe ingresar un contacto del destino.'))
         company = self.env.user.company_id
         url = f'{company.office_guide_base_url}/api/register_single_dte'
         token = self.get_daily_token()
@@ -43,31 +47,36 @@ class StockPicking(models.Model):
         if data_register_single_dte.get('error'):
             raise ValidationError(_('Error al registrar el DTE: %s') % data_register_single_dte['error'].get('detalleRespuesta'))
         self.dte_received_correctly = True
+        folio = json_data.get('Dte')[0].get('Folio')
+        self.folio = folio
     
     def get_data_to_register_single_dte(self):
+        folio = self.env['caf.folio'].get_next_folio()
+        today = fields.Date.to_string(fields.Date.today())
         return  {
-            "RUTEmisor": "77494541-5",
+            "RUTEmisor": self.env.company.partner_id.vat,
             "TipoDTE": "52",
             "envioSII": "true",
             "Dte": [
                 {
-                    "RUTRecep": "96722400-6",
-                    "GiroRecep": "OTRAS ACTIVIDADES",
-                    "RznSocRecep": "PACIFICO CALBE SPA",
-                    "DirRecep": "AVENIDA TRES PONIENTE 235",
-                    "CmnaRecep": "SAN PEDRO DE LA PAZ",
-                    "CiudadRecep": "SAN PEDRO DE LA PAZ",
-                    "Contacto": "959160531",
-                    "Folio": 18,
-                    "FchEmis": "2024-04-11",
-                    "FchVenc": "2024-04-11",
-                    "IndTraslado": "6",
-                    "RUTTrans": "12.345.678-5",
-                    "DirDest": "AVENIDA MAIPU  3243",
-                    "CmnaDest": "CONCEPCION",
-                    "CiudadDest": "CONCEPCION",
+                    "RUTRecep": self.partner_id.docuemnt_number,
+                    "GiroRecep":self.partner_id.activity_description,
+                    "RznSocRecep": self.partner_id.name,
+                    "DirRecep": self.partner_id.street,
+                    "CmnaRecep":self.partner_id.city_id.name,
+                    "CiudadRecep":self.partner_id.city,
+                    "Contacto": self.partner_id.phone,
+                    "Folio": folio,
+                    "FchEmis": today,
+                    "FchVenc": today,
+                    "IndTraslado": "6", # ! a qué corresponde este campo?
+                    "RUTTrans": self.destination_partner_id.docuemnt_number,
+                    "DirDest":  self.destination_partner_id.street,
+                    "CmnaDest":  self.destination_partner_id.city_id.name,
+                    "CiudadDest":  self.destination_partner_id.city,
                     "MntTotal" : 0,
                     "Detalle": [
+                        # ! ¿Qué es NmbItem, QtyItem, PrcItem, MontoItem, DscItem?
                         {
                             "NmbItem": "ONT",
                             "QtyItem": "50",
@@ -114,8 +123,8 @@ class StockPicking(models.Model):
     
     def get_data_to_get_pdf_dte(self):
         return {
-            "rutEmisor": "77494541-5",
-            "folio": 18,
+            "rutEmisor": self.partner_id.vat,
+            "folio": self.folio,
             "tipoDocumento": "52"
         }
         
