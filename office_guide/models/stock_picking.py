@@ -60,7 +60,7 @@ class StockPicking(models.Model):
                 "QtyItem": det.quantity_done,
                 "PrcItem": det.product_id.price_unit,
                 "MontoItem": det.product_id.price_unit * det.quantity_done,
-                "DscItem": "modelo RWEWRW"
+                "DscItem": 0
             })
         return  {
             "RUTEmisor": self.env.company.partner_id.vat,
