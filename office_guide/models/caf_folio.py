@@ -31,8 +31,14 @@ class CafFolio(models.Model):
         # Si hay más de un registro con active=True, lanzar una excepción de validación
         if len(true_records) > 1:
             raise ValidationError("Solo puede haber un registro con active True.")
+        
+    @api.model
+    def create(self, vals):
+        res = super(CafFolio, self).create(vals)
+        res.read_xml()
+        return res
 
-    @api.onchange('caf_xml')
+    # @api.onchange('caf_xml')
     def read_xml(self):
         for record in self:
             if record.caf_xml:
