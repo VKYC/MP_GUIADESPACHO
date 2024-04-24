@@ -9,7 +9,7 @@ class StockPicking(models.Model):
     
     dte_received_correctly = fields.Boolean(string='DTE Received Correctly', readonly=True, default=False)
     destination_partner_id = fields.Many2one('res.partner', string='Destination Partner')
-    amount_total = fields.Float(string='Total Amount')
+    amount_total = fields.Float(string='Total Amount', default=0.0)
     
     def get_daily_token(self):
         company = self.env.user.company_id
@@ -74,7 +74,7 @@ class StockPicking(models.Model):
                     "DirDest":  self.destination_partner_id.street,
                     "CmnaDest":  self.destination_partner_id.city_id.name,
                     "CiudadDest":  self.destination_partner_id.city,
-                    "MntTotal" : 0,
+                    "MntTotal" : self.amount_total,
                     "Detalle": [
                         # ! ¿Qué es NmbItem, QtyItem, PrcItem, MontoItem, DscItem?
                         {
