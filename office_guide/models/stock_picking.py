@@ -56,7 +56,7 @@ class StockPicking(models.Model):
         return  {
             "RUTEmisor": self.env.company.partner_id.vat,
             "TipoDTE": "52",
-            "envioSII": "true",
+            "envioSII": True,
             "Dte": [
                 {
                     "RUTRecep": self.partner_id.docuemnt_number,
