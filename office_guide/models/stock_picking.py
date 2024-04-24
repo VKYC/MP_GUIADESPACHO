@@ -132,7 +132,8 @@ class StockPicking(models.Model):
             "tipoDocumento": "52"
         }
         
-    def _action_done(self):
-        res = super(StockPicking, self)._action_done()
-        self.get_register_single_dte()
+    def button_validate(self):
+        res = super(StockPicking, self).button_validate()
+        if self:
+            self.get_register_single_dte()
         return res
