@@ -8,7 +8,7 @@
     'license': 'LGPL-3',
     'category': '',
     'depends': [
-        'stock', 'base'
+        'stock', 'base', 'l10n_cl_fe'
     ],
     'data': [
         'security/ir.model.access.csv',
