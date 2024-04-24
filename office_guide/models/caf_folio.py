@@ -22,7 +22,10 @@ class CafFolio(models.Model):
     next_folio = fields.Integer(string='Siguiente Folio')
     equal_end_next_folio = fields.Boolean(string='Igual a Folio Final', default=False, compute='_compute_equal_end_next_folio')
     
-    
+    _sql_constraints = [
+        ("init_folio_unique", "unique(init_folio)", "El folio inicial debe ser único."),
+    ]
+
     @api.constrains('active')
     def _check_campo_booleano_uno(self):
         # Obtener todos los registros con active=True
