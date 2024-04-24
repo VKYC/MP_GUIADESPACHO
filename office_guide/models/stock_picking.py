@@ -53,6 +53,15 @@ class StockPicking(models.Model):
     def get_data_to_register_single_dte(self):
         folio = self.env['caf.folio'].get_next_folio()
         today = fields.Date.to_string(fields.Date.today())
+        detalle = []
+        for det in self.move_ids_without_package:
+            detalle.append({
+                "NmbItem": det.product_id.name,
+                "QtyItem": det.quantity_done,
+                "PrcItem": det.product_id.price_unit,
+                "MontoItem": det.product_id.price_unit * det.quantity_done,
+                "DscItem": "modelo RWEWRW"
+            })
         return  {
             "RUTEmisor": self.env.company.partner_id.vat,
             "TipoDTE": "52",
@@ -75,16 +84,7 @@ class StockPicking(models.Model):
                     "CmnaDest":  self.destination_partner_id.city_id.name,
                     "CiudadDest":  self.destination_partner_id.city,
                     "MntTotal" : self.amount_total,
-                    "Detalle": [
-                        # ! ¿Qué es NmbItem, QtyItem, PrcItem, MontoItem, DscItem?
-                        {
-                            "NmbItem": "ONT",
-                            "QtyItem": "50",
-                            "PrcItem": 0,
-                            "MontoItem": 0,
-                            "DscItem": "modelo RWEWRW"
-                        }
-                    ]
+                    "Detalle": detalle
                 }
             ]
         }
