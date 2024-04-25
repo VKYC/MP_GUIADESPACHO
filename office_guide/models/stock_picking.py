@@ -49,7 +49,7 @@ class StockPicking(models.Model):
         if not self.destination_partner_id:
             raise ValidationError(_('Debe ingresar un contacto del destino.'))
         company = self.env.user.company_id
-        url = f'{company.office_guide_base_url}/api/register_single_dte'
+        url = f'{company.office_guide_base_url}/api/facturacion/registrarDTE'
         token = self.get_daily_token()
         headers = {
             'Authorization': f'Bearer {token}',
