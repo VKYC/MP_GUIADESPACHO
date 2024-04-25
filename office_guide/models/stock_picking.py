@@ -2,6 +2,7 @@ from odoo import _, api, fields, models
 from datetime import datetime
 from odoo.exceptions import ValidationError
 import requests
+import json
 import logging
 
 
@@ -19,7 +20,7 @@ class StockPicking(models.Model):
     amount_total = fields.Float(string='Total Amount', default=0.0)
     url_pdf = fields.Char(string='URL PDF', readonly=True)
     binary_pdf = fields.Binary(string='Binary PDF', readonly=True)
-    json_dte = fields.Char(string='JSON DTE', readonly=True)
+    json_dte = fields.Text(string='JSON DTE', readonly=True)
     
     def get_daily_token(self):
         company = self.env.user.company_id
@@ -61,15 +62,15 @@ class StockPicking(models.Model):
             'Authorization': f'Bearer {token}',
             'Content-type': 'application/json'
         }
-        json_data = self.get_data_to_register_single_dte()
-        data_register_single_dte = requests.post(url, data=json_data, headers=headers)
+        json_dte = self.get_data_to_register_single_dte()
+        data_register_single_dte = requests.post(url, data=json_dte, headers=headers)
         # if data_register_single_dte.status_code != 200:
         #     raise ValidationError(_('Error al registrar el DTE: %s') % data_register_single_dte.text)
         data_register_single_dte = data_register_single_dte.json()
         if data_register_single_dte.get('error'):
-            raise ValidationError(_('Error al registrar el DTE: %s') % data_register_single_dte['error'].get('detalleRespuesta'))
+            raise ValidationError(_('Error al registrar el DTE: %s\n%s') % (data_register_single_dte['error'].get('detalleRespuesta'), json_dte))
         self.dte_received_correctly = True
-        folio = json_data.get('Dte')[0].get('Folio')
+        folio = json_dte.get('Dte')[0].get('Folio')
         self.folio = folio
     
     def get_data_to_register_single_dte(self):
@@ -92,7 +93,7 @@ class StockPicking(models.Model):
             "Dte": [
                 {
                     "RUTRecep": self.partner_id.document_number,
-                    "GiroRecep":self.partner_id.activity_description,
+                    "GiroRecep":self.partner_id.activity_description.name,
                     "RznSocRecep": self.partner_id.name,
                     "DirRecep": self.partner_id.street,
                     "CmnaRecep":self.partner_id.city_id.name,
@@ -101,7 +102,7 @@ class StockPicking(models.Model):
                     "Folio": folio,
                     "FchEmis": today,
                     "FchVenc": today,
-                    "IndTraslado": "5", # ! a qué corresponde este campo?
+                    "IndTraslado": "5",
                     "RUTTrans": self.destination_partner_id.document_number,
                     "DirDest":  self.destination_partner_id.street,
                     "CmnaDest":  self.destination_partner_id.city_id.name,
@@ -111,7 +112,7 @@ class StockPicking(models.Model):
                 }
             ]
         }
-        self.json_dte = json_dte
+        self.json_dte = json.dumps(json_dte)
         _logger.info(f"datos del json {self.id} {json_dte}")
         return json_dte
         
