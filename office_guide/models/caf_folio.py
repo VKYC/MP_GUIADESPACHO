@@ -66,8 +66,8 @@ class CafFolio(models.Model):
     def get_next_folio(self):
         # Obtener el registro activo
         date_today = fields.Date.today()
-        active_record = self.env['caf.folio'].search([('active', '=', True), ('init_date', '>=', date_today)])
-        records = self.env['caf.folio'].search([('equal_end_next_folio', '=', False), ('init_date', '>=', date_today)], order='init_folio asc')
+        active_record = self.env['caf.folio'].search([('active', '=', True), ('init_date', '<=', date_today)])
+        records = self.env['caf.folio'].search([('active', '=', False), ('equal_end_next_folio', '=', False), ('init_date', '<=', date_today)], order='init_folio asc')
         if not active_record:
             if not records:
                 raise ValidationError("No hay un CAF.")
@@ -78,7 +78,7 @@ class CafFolio(models.Model):
         next_folio = active_record.next_folio
         if active_record.next_folio == active_record.end_folio:
             active_record.active = False
-            new_active_record = self.env['caf.folio'].search([('active', '=', False), ('equal_end_next_folio', '=', False), ('init_folio', '>', active_record.next_folio), ('init_date', '>=', date_today)], limit=1, order='init_folio asc')
+            new_active_record = self.env['caf.folio'].search([('active', '=', False), ('equal_end_next_folio', '=', False), ('init_folio', '>', active_record.next_folio), ('init_date', '<=', date_today)], limit=1, order='init_folio asc')
             new_active_record.active = True
         else:
             active_record.next_folio += 1

@@ -1,7 +1,8 @@
 from odoo import _, api, fields, models
-from odoo.http import request
 from datetime import datetime
 from odoo.exceptions import ValidationError
+import requests
+
 
 class StockPicking(models.Model):
     _inherit = 'stock.picking'
@@ -12,19 +13,29 @@ class StockPicking(models.Model):
     amount_total = fields.Float(string='Total Amount', default=0.0)
     url_pdf = fields.Char(string='URL PDF', readonly=True)
     binary_pdf = fields.Binary(string='Binary PDF', readonly=True)
+    # json_dte = fields.Json(string='JSON DTE', readonly=True)
     
     def get_daily_token(self):
         company = self.env.user.company_id
+        if not company.office_guide_base_url or not company.office_guide_username or not company.office_guide_password:
+            raise ValidationError(_('Debe configurar los datos de conexión de la guía de despacho.'))
         if not company.office_guide_expiry_date or company.office_guide_expiry_date < fields.Datetime.now():
             try:
                 url = f'{company.office_guide_base_url}/api/login'
                 params = {
-                    'username': company.office_guide_username,
+                    'email': company.office_guide_username,
                     'password': company.office_guide_password
                 }
-                token_data = request.post(url, params)
+                token_data = requests.post(url, data=params)
+            except requests.exceptions.RequestException as e:
+                raise ValidationError(_('Error de conexión: %s') % e)
+            except requests.exceptions.HTTPError as e:
+                raise ValidationError(_('Error HTTP: %s') % e)
             except Exception as e:
                 raise ValidationError(_('Error al obtener el token diario: %s') % e)
+            if token_data.status_code != 200:
+                raise ValidationError(_('Error al obtener el token diario: %s') % token_data.text)
+            token_data = token_data.json()
             expiry_date = datetime.strptime(token_data.get('expira'), "%Y-%m-%d %H:%M:%S")
             token = token_data.get('token')
             company.write({
@@ -45,10 +56,14 @@ class StockPicking(models.Model):
             'Content-type': 'application/json'
         }
         json_data = self.get_data_to_register_single_dte()
-        data_register_single_dte = request.post(url, json_data, headers=headers)
+        data_register_single_dte = requests.post(url, data=json_data, headers=headers)
+        # if data_register_single_dte.status_code != 200:
+        #     raise ValidationError(_('Error al registrar el DTE: %s') % data_register_single_dte.text)
+        data_register_single_dte = data_register_single_dte.json()
         if data_register_single_dte.get('error'):
             raise ValidationError(_('Error al registrar el DTE: %s') % data_register_single_dte['error'].get('detalleRespuesta'))
         self.dte_received_correctly = True
+        # self.json_dte = json_data
         folio = json_data.get('Dte')[0].get('Folio')
         self.folio = folio
     
@@ -60,8 +75,8 @@ class StockPicking(models.Model):
             detalle.append({
                 "NmbItem": det.product_id.name,
                 "QtyItem": det.quantity_done,
-                "PrcItem": det.product_id.price_unit,
-                "MontoItem": det.product_id.price_unit * det.quantity_done,
+                "PrcItem": det.product_id.product_tmpl_id.list_price,
+                "MontoItem": det.product_id.product_tmpl_id.list_price * det.quantity_done,
                 "DscItem": 0
             })
         return  {
@@ -70,7 +85,7 @@ class StockPicking(models.Model):
             "envioSII": True,
             "Dte": [
                 {
-                    "RUTRecep": self.partner_id.docuemnt_number,
+                    "RUTRecep": self.partner_id.document_number,
                     "GiroRecep":self.partner_id.activity_description,
                     "RznSocRecep": self.partner_id.name,
                     "DirRecep": self.partner_id.street,
@@ -81,7 +96,7 @@ class StockPicking(models.Model):
                     "FchEmis": today,
                     "FchVenc": today,
                     "IndTraslado": "6", # ! a qué corresponde este campo?
-                    "RUTTrans": self.destination_partner_id.docuemnt_number,
+                    "RUTTrans": self.destination_partner_id.document_number,
                     "DirDest":  self.destination_partner_id.street,
                     "CmnaDest":  self.destination_partner_id.city_id.name,
                     "CiudadDest":  self.destination_partner_id.city,
@@ -101,7 +116,10 @@ class StockPicking(models.Model):
                 'Content-type': 'application/json'
             }
             json_data = self.get_data_to_get_pdf_dte()
-            data_binary_pdf_dte = request.post(url, json_data, headers=headers)
+            data_binary_pdf_dte = requests.post(url, data=json_data, headers=headers)
+            # if data_binary_pdf_dte.status_code != 200:
+            #     raise ValidationError(_('Error al obtener el PDF del DTE: %s') % data_binary_pdf_dte.text)
+            data_binary_pdf_dte = data_binary_pdf_dte.json()
             if data_binary_pdf_dte.get('error'):
                 raise ValidationError(_('Error al obtener el PDF del DTE: %s') % data_binary_pdf_dte['error'].get('detalleRespuesta'))
             binary_pdf = data_binary_pdf_dte['success'].get('detalleRespuesta')
@@ -118,7 +136,10 @@ class StockPicking(models.Model):
                 'Content-type': 'application/json'
             }
             json_data = self.get_data_to_get_pdf_dte()
-            data_url_pdf_dte = request.post(url, json_data, headers=headers)
+            data_url_pdf_dte = requests.post(url, data=json_data, headers=headers)
+            # if data_url_pdf_dte.status_code != 200:
+            #     raise ValidationError(_('Error al obtener el PDF del DTE: %s') % data_url_pdf_dte.text)
+            data_url_pdf_dte = data_url_pdf_dte.json()
             if data_url_pdf_dte.get('error'):
                 raise ValidationError(_('Error al obtener el PDF del DTE: %s') % data_url_pdf_dte['error'].get('detalleRespuesta'))
             url_pdf = data_url_pdf_dte['success'].get('detalleRespuesta')
