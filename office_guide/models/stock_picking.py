@@ -2,6 +2,12 @@ from odoo import _, api, fields, models
 from datetime import datetime
 from odoo.exceptions import ValidationError
 import requests
+import logging
+
+
+_logger = logging.getLogger(__name__)
+
+
 
 
 class StockPicking(models.Model):
@@ -13,7 +19,7 @@ class StockPicking(models.Model):
     amount_total = fields.Float(string='Total Amount', default=0.0)
     url_pdf = fields.Char(string='URL PDF', readonly=True)
     binary_pdf = fields.Binary(string='Binary PDF', readonly=True)
-    # json_dte = fields.Json(string='JSON DTE', readonly=True)
+    json_dte = fields.Char(string='JSON DTE', readonly=True)
     
     def get_daily_token(self):
         company = self.env.user.company_id
@@ -56,6 +62,7 @@ class StockPicking(models.Model):
             'Content-type': 'application/json'
         }
         json_data = self.get_data_to_register_single_dte()
+        self.json_dte = json_data
         data_register_single_dte = requests.post(url, data=json_data, headers=headers)
         # if data_register_single_dte.status_code != 200:
         #     raise ValidationError(_('Error al registrar el DTE: %s') % data_register_single_dte.text)
@@ -63,7 +70,6 @@ class StockPicking(models.Model):
         if data_register_single_dte.get('error'):
             raise ValidationError(_('Error al registrar el DTE: %s') % data_register_single_dte['error'].get('detalleRespuesta'))
         self.dte_received_correctly = True
-        # self.json_dte = json_data
         folio = json_data.get('Dte')[0].get('Folio')
         self.folio = folio
     
@@ -79,7 +85,8 @@ class StockPicking(models.Model):
                 "MontoItem": det.product_id.product_tmpl_id.list_price * det.quantity_done,
                 "DscItem": 0
             })
-        return  {
+        
+        json_dte = {
             "RUTEmisor": self.env.company.partner_id.vat,
             "TipoDTE": "52",
             "envioSII": True,
@@ -95,7 +102,7 @@ class StockPicking(models.Model):
                     "Folio": folio,
                     "FchEmis": today,
                     "FchVenc": today,
-                    "IndTraslado": "6", # ! a qué corresponde este campo?
+                    "IndTraslado": "5", # ! a qué corresponde este campo?
                     "RUTTrans": self.destination_partner_id.document_number,
                     "DirDest":  self.destination_partner_id.street,
                     "CmnaDest":  self.destination_partner_id.city_id.name,
@@ -105,6 +112,9 @@ class StockPicking(models.Model):
                 }
             ]
         }
+        _logger.info(f"datos del json {self.id} {json_dte}")
+        return json_dte
+        
         
     def get_binary_pdf_dte(self):
         if self.dte_received_correctly:
