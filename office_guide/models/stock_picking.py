@@ -63,7 +63,7 @@ class StockPicking(models.Model):
             # 'Content-type': 'application/json'
         }
         json_dte = self.get_data_to_register_single_dte()
-        data_register_single_dte = requests.post(url, data=json.dumps(json_dte), headers=headers)
+        data_register_single_dte = requests.post(url, data=json_dte, headers=headers)
         # if data_register_single_dte.status_code != 200:
         #     raise ValidationError(_('Error al registrar el DTE: %s') % data_register_single_dte.text)
         data_register_single_dte = data_register_single_dte.json()
