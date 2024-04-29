@@ -60,7 +60,7 @@ class StockPicking(models.Model):
         token = self.get_daily_token()
         headers = {
             'Authorization': f'Bearer {token}',
-            'Content-type': 'application/json'
+            # 'Content-type': 'application/json'
         }
         json_dte = self.get_data_to_register_single_dte()
         data_register_single_dte = requests.post(url, data=json_dte, headers=headers)
@@ -81,8 +81,8 @@ class StockPicking(models.Model):
             detalle.append({
                 "NmbItem": det.product_id.name,
                 "QtyItem": det.quantity_done,
-                "PrcItem": det.product_id.product_tmpl_id.list_price,
-                "MontoItem": det.product_id.product_tmpl_id.list_price * det.quantity_done,
+                "PrcItem": 0,
+                "MontoItem": 0,
                 "DscItem": 0
             })
         
@@ -107,7 +107,7 @@ class StockPicking(models.Model):
                     "DirDest":  self.destination_partner_id.street,
                     "CmnaDest":  self.destination_partner_id.city_id.name,
                     "CiudadDest":  self.destination_partner_id.city,
-                    "MntTotal" : self.amount_total,
+                    "MntTotal" : 0,
                     "Detalle": detalle
                 }
             ]
