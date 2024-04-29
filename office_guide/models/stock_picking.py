@@ -108,7 +108,8 @@ class StockPicking(models.Model):
                     "CmnaDest":  self.destination_partner_id.city_id.name,
                     "CiudadDest":  self.destination_partner_id.city,
                     "MntTotal" : 0,
-                    "Detalle": detalle
+                    "Detalle": detalle,
+                    "DetalleType":str(type(detalle)),
                 }
             ]
         }
