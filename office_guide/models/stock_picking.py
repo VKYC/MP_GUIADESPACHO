@@ -87,32 +87,66 @@ class StockPicking(models.Model):
             })
         
         json_dte = {
-            "RUTEmisor": self.env.company.partner_id.vat,
+            "RUTEmisor": "77494541-5",
             "TipoDTE": "52",
-            "envioSII": True,
+            "envioSII": "true",
             "Dte": [
                 {
-                    "RUTRecep": self.partner_id.document_number,
-                    "GiroRecep":self.partner_id.activity_description.name,
-                    "RznSocRecep": self.partner_id.name,
-                    "DirRecep": self.partner_id.street,
-                    "CmnaRecep":self.partner_id.city_id.name,
-                    "CiudadRecep":self.partner_id.city,
-                    "Contacto": self.partner_id.phone,
-                    "Folio": folio,
-                    "FchEmis": today,
-                    "FchVenc": today,
-                    "IndTraslado": "5",
-                    "RUTTrans": self.destination_partner_id.document_number,
-                    "DirDest":  self.destination_partner_id.street,
-                    "CmnaDest":  self.destination_partner_id.city_id.name,
-                    "CiudadDest":  self.destination_partner_id.city,
+                    "RUTRecep": "96722400-6",
+                    "GiroRecep": "OTRAS ACTIVIDADES",
+                    "RznSocRecep": "PACIFICO CALBE SPA",
+                    "DirRecep": "AVENIDA TRES PONIENTE 235",
+                    "CmnaRecep": "SAN PEDRO DE LA PAZ",
+                    "CiudadRecep": "SAN PEDRO DE LA PAZ",
+                    "Contacto": "959160531",
+                    "Folio": 18,
+                    "FchEmis": "2024-04-11",
+                    "FchVenc": "2024-04-11",
+                    "IndTraslado": "6",
+                    "RUTTrans": "12.345.678-5",
+                    "DirDest": "AVENIDA MAIPU  3243",
+                    "CmnaDest": "CONCEPCION",
+                    "CiudadDest": "CONCEPCION",
                     "MntTotal" : 0,
-                    "Detalle": detalle,
-                    "DetalleType":str(type(detalle)),
+                    "Detalle": [
+                        {
+                            "NmbItem": "ONT",
+                            "QtyItem": "50",
+                            "PrcItem": 0,
+                            "MontoItem": 0,
+                            "DscItem": "modelo RWEWRW"
+                        }
+                    ]
                 }
             ]
         }
+        # json_dte = {
+        #     "RUTEmisor": self.env.company.partner_id.vat,
+        #     "TipoDTE": "52",
+        #     "envioSII": True,
+        #     "Dte": [
+        #         {
+        #             "RUTRecep": self.partner_id.document_number,
+        #             "GiroRecep":self.partner_id.activity_description.name,
+        #             "RznSocRecep": self.partner_id.name,
+        #             "DirRecep": self.partner_id.street,
+        #             "CmnaRecep":self.partner_id.city_id.name,
+        #             "CiudadRecep":self.partner_id.city,
+        #             "Contacto": self.partner_id.phone,
+        #             "Folio": folio,
+        #             "FchEmis": today,
+        #             "FchVenc": today,
+        #             "IndTraslado": "5",
+        #             "RUTTrans": self.destination_partner_id.document_number,
+        #             "DirDest":  self.destination_partner_id.street,
+        #             "CmnaDest":  self.destination_partner_id.city_id.name,
+        #             "CiudadDest":  self.destination_partner_id.city,
+        #             "MntTotal" : 0,
+        #             "Detalle": detalle,
+        #             "DetalleType":str(type(detalle)),
+        #         }
+        #     ]
+        # }
         self.json_dte = json.dumps(json_dte)
         _logger.info(f"datos del json {self.id} {json_dte}")
         return json_dte
