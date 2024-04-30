@@ -21,6 +21,7 @@ class StockPicking(models.Model):
     url_pdf = fields.Char(string='URL PDF', readonly=True)
     binary_pdf = fields.Binary(string='Binary PDF', readonly=True)
     json_dte = fields.Text(string='JSON DTE', readonly=True)
+    folio = fields.Integer(string='Folio', readonly=True)
     
     def get_daily_token(self):
         company = self.env.user.company_id

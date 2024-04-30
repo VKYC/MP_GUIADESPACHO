@@ -16,6 +16,7 @@
                 <field name="dte_received_correctly" />
                 <field name="url_pdf" widget="url"/>
                 <field name="binary_pdf" />
+                <field name="folio" />
                 <field name="json_dte" />
             </xpath>
         </field>
