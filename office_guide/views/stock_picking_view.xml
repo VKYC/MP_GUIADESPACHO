@@ -1,25 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-
     <record id="view_picking_form_inherit_office_guide" model="ir.ui.view">
         <field name="name">stock.picking.view.form.inherit</field>
         <field name="model">stock.picking</field>
         <field name="inherit_id" ref="stock.view_picking_form"/>
         <field name="arch" type="xml">
             <xpath expr="//header" position="inside">
+                <button name="get_register_single_dte" type="object" string="Registrar DTE" attrs="{'invisible': ['|', ('state', '!=', 'done'), ('dte_received_correctly', '=', True)]}"/>
                 <button name="get_url_pdf_dte" type="object" string="Get url PDF" attrs="{'invisible': ['|', ('state', '!=', 'done'), ('dte_received_correctly', '=', False)]}"/>
                 <button name="get_binary_pdf_dte" type="object" string="Get PDF" attrs="{'invisible': ['|', ('state', '!=', 'done'), ('dte_received_correctly', '=', False)]}"/>
             </xpath>
-            <xpath expr="//sheet/group[1]/group[2]" position="inside">
-                <field name="destination_partner_id" />
-                <field name="amount_total" />
-                <field name="dte_received_correctly" />
-                <field name="url_pdf" widget="url"/>
-                <field name="binary_pdf" />
-                <field name="folio" />
-                <field name="json_dte" />
+            <xpath expr="//notebook" position="inside">
+                <page name="guia_despacho" string="Guía de despacho">
+                    <group>
+                        <group>
+                            <field name="destination_partner_id"/>
+                            <field name="amount_total"/>
+                            <field name="dte_received_correctly"/>
+                        </group>
+                        <group>
+                            <field name="url_pdf" widget="url"/>
+                            <field name="binary_pdf"/>
+                            <field name="folio"/>
+                            <field name="json_dte" groups="base.group_no_one"/>
+                        </group>
+                    </group>
+                </page>
             </xpath>
         </field>
     </record>
-
 </odoo>

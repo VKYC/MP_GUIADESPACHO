@@ -60,6 +60,8 @@ class StockPicking(models.Model):
         return company.office_guide_token
     
     def get_register_single_dte(self):
+        if self.dte_received_correctly:
+            raise ValidationError(_('Guía de despacho ya registrada.'))
         if not self.destination_partner_id:
             raise ValidationError(_('Debe ingresar un contacto del destino.'))
         company = self.env.user.company_id
@@ -85,10 +87,10 @@ class StockPicking(models.Model):
         folio = self.env['caf.folio'].get_next_folio()
         today = fields.Date.to_string(fields.Date.today())
         detalle = []
-        for det in self.move_ids_without_package:
+        for det in self.move_line_nosuggest_ids:
             detalle.append({
                 "NmbItem": det.product_id.name,
-                "QtyItem": det.quantity_done,
+                "QtyItem": det.qty_done,
                 "PrcItem": 0,
                 "MontoItem": 0,
                 "DscItem": 0
@@ -172,9 +174,3 @@ class StockPicking(models.Model):
             "folio": self.folio,
             "tipoDocumento": "52"
         }
-        
-    def button_validate(self):
-        res = super(StockPicking, self).button_validate()
-        if self and not self.dte_received_correctly:
-            self.get_register_single_dte()
-        return res
