@@ -3,6 +3,7 @@ from datetime import datetime
 from odoo.exceptions import ValidationError
 import requests
 import json
+import base64
 import logging
 
 
@@ -15,42 +16,47 @@ class StockPicking(models.Model):
     _inherit = 'stock.picking'
     _description = 'Stock Picking'
     
-    dte_received_correctly = fields.Boolean(string='DTE Received Correctly', readonly=True, default=False)
+    dte_received_correctly = fields.Boolean(string='DTE Received Correctly', readonly=True, default=False, copy=False)
     destination_partner_id = fields.Many2one('res.partner', string='Destination Partner')
     amount_total = fields.Float(string='Total Amount', default=0.0)
-    url_pdf = fields.Char(string='URL PDF', readonly=True)
-    binary_pdf = fields.Binary(string='Binary PDF', readonly=True)
-    json_dte = fields.Text(string='JSON DTE', readonly=True)
-    folio = fields.Integer(string='Folio', readonly=True)
+    url_pdf = fields.Char(string='URL PDF', readonly=True, copy=False)
+    binary_pdf = fields.Binary(string='Binary PDF', readonly=True, copy=False)
+    json_dte = fields.Text(string='JSON DTE', readonly=True, copy=False)
+    folio = fields.Integer(string='Folio', readonly=True, copy=False)
+    
+    def get_token(self, company):
+        try:
+            url = f'{company.office_guide_base_url}/api/login'
+            params = {
+                'email': company.office_guide_username,
+                'password': company.office_guide_password
+            }
+            token_data = requests.post(url, data=params)
+        except requests.exceptions.RequestException as e:
+            raise ValidationError(_('Error de conexión: %s') % e)
+        except requests.exceptions.HTTPError as e:
+            raise ValidationError(_('Error HTTP: %s') % e)
+        except Exception as e:
+            raise ValidationError(_('Error al obtener el token diario: %s') % e)
+        if token_data.status_code != 200:
+            raise ValidationError(_('Error al obtener el token diario: %s') % token_data.text)
+        token_data = token_data.json()
+        expiry_date = datetime.strptime(token_data.get('expira'), "%Y-%m-%d %H:%M:%S")
+        token = token_data.get('token')
+        company.write({
+            'office_guide_expiry_date': expiry_date,
+            'office_guide_token': token
+        })
+        return token
     
     def get_daily_token(self):
         company = self.env.user.company_id
+        if self.env.context.get('force_token'):
+            return self.get_token(company)
         if not company.office_guide_base_url or not company.office_guide_username or not company.office_guide_password:
             raise ValidationError(_('Debe configurar los datos de conexión de la guía de despacho.'))
-        if not company.office_guide_expiry_date or company.office_guide_expiry_date < fields.Datetime.now():
-            try:
-                url = f'{company.office_guide_base_url}/api/login'
-                params = {
-                    'email': company.office_guide_username,
-                    'password': company.office_guide_password
-                }
-                token_data = requests.post(url, data=params)
-            except requests.exceptions.RequestException as e:
-                raise ValidationError(_('Error de conexión: %s') % e)
-            except requests.exceptions.HTTPError as e:
-                raise ValidationError(_('Error HTTP: %s') % e)
-            except Exception as e:
-                raise ValidationError(_('Error al obtener el token diario: %s') % e)
-            if token_data.status_code != 200:
-                raise ValidationError(_('Error al obtener el token diario: %s') % token_data.text)
-            token_data = token_data.json()
-            expiry_date = datetime.strptime(token_data.get('expira'), "%Y-%m-%d %H:%M:%S")
-            token = token_data.get('token')
-            company.write({
-                'office_guide_expiry_date': expiry_date,
-                'office_guide_token': token
-            })
-            return token
+        if not company.office_guide_token or company.office_guide_expiry_date < fields.Datetime.now():
+            self.get_token(company)
         return company.office_guide_token
     
     def get_register_single_dte(self):
@@ -65,11 +71,12 @@ class StockPicking(models.Model):
         }
         json_dte = self.get_data_to_register_single_dte()
         data_register_single_dte = requests.post(url, json=json_dte, headers=headers)
-        # if data_register_single_dte.status_code != 200:
-        #     raise ValidationError(_('Error al registrar el DTE: %s') % data_register_single_dte.text)
         data_register_single_dte = data_register_single_dte.json()
         if data_register_single_dte.get('error'):
-            raise ValidationError(_('Error al registrar el DTE: %s\n%s') % (data_register_single_dte['error'].get('detalleRespuesta'), json_dte))
+            if data_register_single_dte.get('codigo') == 401:
+                self.with_context(force_token=True).get_register_single_dte()
+            else:
+                raise ValidationError(_('Error al registrar el DTE: %s\n%s') % (data_register_single_dte['error'].get('detalleRespuesta'), json_dte))
         self.dte_received_correctly = True
         folio = json_dte.get('Dte')[0].get('Folio')
         self.folio = folio
@@ -86,41 +93,6 @@ class StockPicking(models.Model):
                 "MontoItem": 0,
                 "DscItem": 0
             })
-        
-        # json_dte = {
-        #     "RUTEmisor": "77494541-5",
-        #     "TipoDTE": "52",
-        #     "envioSII": "true",
-        #     "Dte": [
-        #         {
-        #             "RUTRecep": "96722400-6",
-        #             "GiroRecep": "OTRAS ACTIVIDADES",
-        #             "RznSocRecep": "PACIFICO CALBE SPA",
-        #             "DirRecep": "AVENIDA TRES PONIENTE 235",
-        #             "CmnaRecep": "SAN PEDRO DE LA PAZ",
-        #             "CiudadRecep": "SAN PEDRO DE LA PAZ",
-        #             "Contacto": "959160531",
-        #             "Folio": 18,
-        #             "FchEmis": "2024-04-11",
-        #             "FchVenc": "2024-04-11",
-        #             "IndTraslado": "6",
-        #             "RUTTrans": "12.345.678-5",
-        #             "DirDest": "AVENIDA MAIPU  3243",
-        #             "CmnaDest": "CONCEPCION",
-        #             "CiudadDest": "CONCEPCION",
-        #             "MntTotal" : 0,
-        #             "Detalle": [
-        #                 {
-        #                     "NmbItem": "ONT",
-        #                     "QtyItem": "50",
-        #                     "PrcItem": 0,
-        #                     "MontoItem": 0,
-        #                     "DscItem": "modelo RWEWRW"
-        #                 }
-        #             ]
-        #         }
-        #     ]
-        # }
         json_dte = {
             "RUTEmisor": self.env.company.partner_id.vat,
             "TipoDTE": "52",
@@ -144,7 +116,6 @@ class StockPicking(models.Model):
                     "CiudadDest":  self.destination_partner_id.city,
                     "MntTotal" : 0,
                     "Detalle": detalle,
-                    # "DetalleType":str(type(detalle)),
                 }
             ]
         }
@@ -164,13 +135,14 @@ class StockPicking(models.Model):
             }
             json_data = self.get_data_to_get_pdf_dte()
             data_binary_pdf_dte = requests.post(url, data=json_data, headers=headers)
-            # if data_binary_pdf_dte.status_code != 200:
-            #     raise ValidationError(_('Error al obtener el PDF del DTE: %s') % data_binary_pdf_dte.text)
             data_binary_pdf_dte = data_binary_pdf_dte.json()
             if data_binary_pdf_dte.get('error'):
-                raise ValidationError(_('Error al obtener el PDF del DTE: %s') % data_binary_pdf_dte['error'].get('detalleRespuesta'))
-            binary_pdf = data_binary_pdf_dte['success'].get('detalleRespuesta')
-            self.binary_pdf = binary_pdf
+                if data_binary_pdf_dte.get('codigo') == 401:
+                    self.with_context(force_token=True).get_binary_pdf_dte()
+                else:
+                    raise ValidationError(_('Error al obtener el PDF del DTE: %s') % data_binary_pdf_dte['error'].get('detalleRespuesta'))
+            binary_pdf = data_binary_pdf_dte['success'].get('descripcionRespuesta').get('documentoPdf')
+            self.binary_pdf = base64.b64decode(binary_pdf)
         raise ValidationError(_('No se ha registrado el DTE correctamente'))
     
     def get_url_pdf_dte(self):
@@ -184,13 +156,14 @@ class StockPicking(models.Model):
             }
             json_data = self.get_data_to_get_pdf_dte()
             data_url_pdf_dte = requests.post(url, data=json_data, headers=headers)
-            # if data_url_pdf_dte.status_code != 200:
-            #     raise ValidationError(_('Error al obtener el PDF del DTE: %s') % data_url_pdf_dte.text)
             data_url_pdf_dte = data_url_pdf_dte.json()
             if data_url_pdf_dte.get('error'):
-                raise ValidationError(_('Error al obtener el PDF del DTE: %s') % data_url_pdf_dte['error'].get('detalleRespuesta'))
-            url_pdf = data_url_pdf_dte['success'].get('detalleRespuesta')
-            self.url_pdf - url_pdf
+                if data_url_pdf_dte.get('codigo') == 401:
+                    self.with_context(force_token=True).get_url_pdf_dte()
+                else:
+                    raise ValidationError(_('Error al obtener el PDF del DTE: %s') % data_url_pdf_dte['error'].get('detalleRespuesta'))
+            url_pdf = data_url_pdf_dte['success'].get('descripcionRespuesta').get('urlPdf')
+            self.url_pdf = url_pdf
         raise ValidationError(_('No se ha registrado el DTE correctamente'))
     
     def get_data_to_get_pdf_dte(self):
@@ -202,6 +175,6 @@ class StockPicking(models.Model):
         
     def button_validate(self):
         res = super(StockPicking, self).button_validate()
-        if self:
+        if self and not self.dte_received_correctly:
             self.get_register_single_dte()
         return res
