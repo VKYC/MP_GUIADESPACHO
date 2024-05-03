@@ -88,6 +88,10 @@ class StockPicking(models.Model):
         today = fields.Date.to_string(fields.Date.today())
         detalle = []
         for det in self.move_line_nosuggest_ids:
+            if not det.product_id.name:
+                raise ValidationError(_('Debe ingresar un nombre del producto.'))
+            if not det.qty_done:
+                raise ValidationError(_('Debe ingresar una cantidad del producto.'))
             detalle.append({
                 "NmbItem": det.product_id.name,
                 "QtyItem": det.qty_done,
@@ -95,13 +99,37 @@ class StockPicking(models.Model):
                 "MontoItem": 0,
                 "DscItem": 0
             })
+        if not self.env.company.partner_id.vat:
+            raise ValidationError(_('Debe ingresar un RUT del emisor.'))
+        if not self.partner_id.document_number:
+            raise ValidationError(_('Debe ingresar un RUT del receptor.'))
+        if not self.partner_id.activity_description.name:
+            raise ValidationError(_('Debe ingresar un giro del receptor.'))
+        if not self.partner_id.name:
+            raise ValidationError(_('Debe ingresar una razón social del receptor.'))
+        if not self.partner_id.street:
+            raise ValidationError(_('Debe ingresar una dirección del receptor.'))
+        if not self.partner_id.city_id.name:
+            raise ValidationError(_('Debe ingresar una comuna del receptor.'))
+        if not self.partner_id.city:
+            raise ValidationError(_('Debe ingresar una ciudad del receptor.'))
+        if not self.partner_id.phone:
+            raise ValidationError(_('Debe ingresar un contacto del receptor.'))
+        if not self.destination_partner_id.document_number:
+            raise ValidationError(_('Debe ingresar un RUT del transportista.'))
+        if not self.destination_partner_id.street:
+            raise ValidationError(_('Debe ingresar una dirección del transportista.'))
+        if not self.destination_partner_id.city_id.name:
+            raise ValidationError(_('Debe ingresar una comuna del transportista.'))
+        if not self.destination_partner_id.city:
+            raise ValidationError(_('Debe ingresar una ciudad del transportista.'))
         json_dte = {
-            "RUTEmisor": self.env.company.partner_id.vat,
+            "RUTEmisor": self.env.company.partner_id.vat.replace('.', ''),
             "TipoDTE": "52",
             "envioSII": True,
             "Dte": [
                 {
-                    "RUTRecep": self.partner_id.document_number,
+                    "RUTRecep": self.partner_id.document_number.replace('.', ''),
                     "GiroRecep":self.partner_id.activity_description.name,
                     "RznSocRecep": self.partner_id.name,
                     "DirRecep": self.partner_id.street,
@@ -133,7 +161,7 @@ class StockPicking(models.Model):
             token = self.get_daily_token()
             headers = {
                 'Authorization': f'Bearer {token}',
-                'Content-type': 'application/json'
+                # 'Content-type': 'application/json'
             }
             json_data = self.get_data_to_get_pdf_dte()
             data_binary_pdf_dte = requests.post(url, data=json_data, headers=headers)
@@ -154,7 +182,7 @@ class StockPicking(models.Model):
             token = self.get_daily_token()
             headers = {
                 'Authorization': f'Bearer {token}',
-                'Content-type': 'application/json'
+                # 'Content-type': 'application/json'
             }
             json_data = self.get_data_to_get_pdf_dte()
             data_url_pdf_dte = requests.post(url, data=json_data, headers=headers)
