@@ -76,13 +76,14 @@ class StockPicking(models.Model):
         data_register_single_dte = data_register_single_dte.json()
         if data_register_single_dte.get('error'):
             if data_register_single_dte.get('codigo') == 401:
-                self.with_context(force_token=True).get_register_single_dte()
+                return self.with_context(force_token=True).get_register_single_dte()
             else:
                 raise ValidationError(_('Error al registrar el DTE: %s\n%s') % (data_register_single_dte['error'].get('detalleRespuesta'), json_dte))
         self.dte_received_correctly = True
         folio = json_dte.get('Dte')[0].get('Folio')
         self.folio = folio
         self.json_dte = json.dumps(json_dte)
+        return True
     
     def get_data_to_register_single_dte(self):
         folio = self.env['caf.folio'].get_next_folio()
