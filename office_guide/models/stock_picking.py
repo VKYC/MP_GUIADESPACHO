@@ -71,7 +71,7 @@ class StockPicking(models.Model):
             'Authorization': f'Bearer {token}',
             'Content-type': 'application/json'
         }
-        json_dte = self.get_data_to_register_single_dte()
+        json_dte, folio = self.get_data_to_register_single_dte()
         data_register_single_dte = requests.post(url, json=json_dte, headers=headers)
         data_register_single_dte = data_register_single_dte.json()
         if data_register_single_dte.get('error'):
@@ -82,6 +82,7 @@ class StockPicking(models.Model):
         self.dte_received_correctly = True
         folio = json_dte.get('Dte')[0].get('Folio')
         self.folio = folio
+        self.json_dte = json.dumps(json_dte)
     
     def get_data_to_register_single_dte(self):
         folio = self.env['caf.folio'].get_next_folio()
@@ -149,9 +150,7 @@ class StockPicking(models.Model):
                 }
             ]
         }
-        self.json_dte = json.dumps(json_dte)
-        _logger.info(f"datos del json {self.id} {json_dte}")
-        return json_dte
+        return json_dte, folio
         
         
     def get_binary_pdf_dte(self):
@@ -161,7 +160,7 @@ class StockPicking(models.Model):
             token = self.get_daily_token()
             headers = {
                 'Authorization': f'Bearer {token}',
-                # 'Content-type': 'application/json'
+                'Content-type': 'application/json'
             }
             json_data = self.get_data_to_get_pdf_dte()
             data_binary_pdf_dte = requests.post(url, data=json_data, headers=headers)
@@ -182,7 +181,7 @@ class StockPicking(models.Model):
             token = self.get_daily_token()
             headers = {
                 'Authorization': f'Bearer {token}',
-                # 'Content-type': 'application/json'
+                'Content-type': 'application/json'
             }
             json_data = self.get_data_to_get_pdf_dte()
             data_url_pdf_dte = requests.post(url, data=json_data, headers=headers)
