@@ -104,7 +104,7 @@ class StockPicking(models.Model):
         if not self.partner_id.document_number:
             raise ValidationError(_('Debe ingresar un RUT del receptor.'))
         if not self.partner_id.activity_description.name:
-            raise ValidationError(_('Debe ingresar un giro del receptor.'))
+            raise ValidationError(_('Debe ingresar la glosa descriptiva del receptor.'))
         if not self.partner_id.name:
             raise ValidationError(_('Debe ingresar una razón social del receptor.'))
         if not self.partner_id.street:
@@ -114,7 +114,7 @@ class StockPicking(models.Model):
         if not self.partner_id.city:
             raise ValidationError(_('Debe ingresar una ciudad del receptor.'))
         if not self.partner_id.phone:
-            raise ValidationError(_('Debe ingresar un contacto del receptor.'))
+            raise ValidationError(_('Debe ingresar el celular del receptor.'))
         if not self.destination_partner_id.document_number:
             raise ValidationError(_('Debe ingresar un RUT del transportista.'))
         if not self.destination_partner_id.street:
