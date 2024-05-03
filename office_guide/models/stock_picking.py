@@ -140,7 +140,7 @@ class StockPicking(models.Model):
                     "FchEmis": today,
                     "FchVenc": today,
                     "IndTraslado": "5",
-                    "RUTTrans": self.destination_partner_id.document_number,
+                    "RUTTrans": self.destination_partner_id.document_number.replace('.', ''),
                     "DirDest":  self.destination_partner_id.street,
                     "CmnaDest":  self.destination_partner_id.city_id.name,
                     "CiudadDest":  self.destination_partner_id.city,
