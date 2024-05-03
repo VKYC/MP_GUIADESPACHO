@@ -93,11 +93,11 @@ class StockPicking(models.Model):
             if not det.qty_done:
                 raise ValidationError(_('Debe ingresar una cantidad del producto.'))
             detalle.append({
-                "NmbItem": det.product_id.name,
+                "NmbItem": 'Traslado - No Constituye Venta :',
                 "QtyItem": det.qty_done,
                 "PrcItem": 0,
                 "MontoItem": 0,
-                "DscItem": 0
+                "DscItem": det.product_id.name
             })
         if not self.env.company.partner_id.vat:
             raise ValidationError(_('Debe ingresar un RUT del emisor.'))
