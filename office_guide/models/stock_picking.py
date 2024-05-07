@@ -173,7 +173,8 @@ class StockPicking(models.Model):
                     raise ValidationError(_('Error al obtener el PDF del DTE: %s') % data_binary_pdf_dte['error'].get('detalleRespuesta'))
             binary_pdf = data_binary_pdf_dte['success'].get('descripcionRespuesta').get('documentoPdf')
             self.binary_pdf = base64.b64decode(binary_pdf)
-        raise ValidationError(_('No se ha registrado el DTE correctamente'))
+        else:
+            raise ValidationError(_('No se ha registrado el DTE correctamente'))
     
     def get_url_pdf_dte(self):
         if self.dte_received_correctly:
@@ -194,7 +195,8 @@ class StockPicking(models.Model):
                     raise ValidationError(_('Error al obtener el PDF del DTE: %s') % data_url_pdf_dte['error'].get('detalleRespuesta'))
             url_pdf = data_url_pdf_dte['success'].get('descripcionRespuesta').get('urlPdf')
             self.url_pdf = url_pdf
-        raise ValidationError(_('No se ha registrado el DTE correctamente'))
+        else:
+            raise ValidationError(_('No se ha registrado el DTE correctamente'))
     
     def get_data_to_get_pdf_dte(self):
         return {
