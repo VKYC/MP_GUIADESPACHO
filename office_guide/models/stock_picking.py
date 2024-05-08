@@ -4,6 +4,7 @@ from odoo.exceptions import ValidationError
 import requests
 import json
 import base64
+import io
 import logging
 
 
@@ -21,6 +22,7 @@ class StockPicking(models.Model):
     amount_total = fields.Float(string='Total Amount', default=0.0)
     url_pdf = fields.Char(string='URL PDF', readonly=True, copy=False)
     binary_pdf = fields.Binary(string='Binary PDF', readonly=True, copy=False)
+    filename_pdf = fields.Char(string='Filename PDF', readonly=True, copy=False)
     json_dte = fields.Text(string='JSON DTE', readonly=True, copy=False)
     folio = fields.Integer(string='Folio', readonly=True, copy=False)
     
@@ -138,7 +140,7 @@ class StockPicking(models.Model):
                     "CmnaRecep":self.partner_id.city_id.name,
                     "CiudadRecep":self.partner_id.city,
                     "Contacto": self.partner_id.phone,
-                    "Folio": folio,
+                    "Folio": str(folio),
                     "FchEmis": today,
                     "FchVenc": today,
                     "IndTraslado": "5",
@@ -164,15 +166,17 @@ class StockPicking(models.Model):
                 'Content-type': 'application/json'
             }
             json_data = self.get_data_to_get_pdf_dte()
-            data_binary_pdf_dte = requests.post(url, data=json_data, headers=headers)
+            data_binary_pdf_dte = requests.post(url, json=json_data, headers=headers)
             data_binary_pdf_dte = data_binary_pdf_dte.json()
             if data_binary_pdf_dte.get('error'):
                 if data_binary_pdf_dte.get('codigo') == 401:
-                    self.with_context(force_token=True).get_binary_pdf_dte()
+                    return self.with_context(force_token=True).get_binary_pdf_dte()
                 else:
                     raise ValidationError(_('Error al obtener el PDF del DTE: %s') % data_binary_pdf_dte['error'].get('detalleRespuesta'))
             binary_pdf = data_binary_pdf_dte['success'].get('descripcionRespuesta').get('documentoPdf')
             self.binary_pdf = base64.b64decode(binary_pdf)
+            self.filename_pdf = f'GuiaDespacho_{self.folio}.pdf'
+            return True
         else:
             raise ValidationError(_('No se ha registrado el DTE correctamente'))
     
@@ -186,21 +190,22 @@ class StockPicking(models.Model):
                 'Content-type': 'application/json'
             }
             json_data = self.get_data_to_get_pdf_dte()
-            data_url_pdf_dte = requests.post(url, data=json_data, headers=headers)
+            data_url_pdf_dte = requests.post(url, json=json_data, headers=headers)
             data_url_pdf_dte = data_url_pdf_dte.json()
             if data_url_pdf_dte.get('error'):
                 if data_url_pdf_dte.get('codigo') == 401:
-                    self.with_context(force_token=True).get_url_pdf_dte()
+                    return self.with_context(force_token=True).get_url_pdf_dte()
                 else:
                     raise ValidationError(_('Error al obtener el PDF del DTE: %s') % data_url_pdf_dte['error'].get('detalleRespuesta'))
             url_pdf = data_url_pdf_dte['success'].get('descripcionRespuesta').get('urlPdf')
             self.url_pdf = url_pdf
+            return True
         else:
             raise ValidationError(_('No se ha registrado el DTE correctamente'))
     
     def get_data_to_get_pdf_dte(self):
         return {
-            "rutEmisor": self.partner_id.vat,
-            "folio": str(self.folio),
-            "tipoDocumento": "52"
+            'rutEmisor': self.env.company.partner_id.vat.replace('.', ''),
+            'folio': '84', # str(self.folio),
+            'tipoDocumento': '52'
         }
