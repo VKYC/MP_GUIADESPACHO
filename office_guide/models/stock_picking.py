@@ -1,6 +1,7 @@
-from odoo import _, api, fields, models
+from odoo import _, api, fields, models, http
 from datetime import datetime
 from odoo.exceptions import ValidationError
+from odoo.http import request
 import requests
 import json
 import base64
@@ -199,7 +200,11 @@ class StockPicking(models.Model):
                     raise ValidationError(_('Error al obtener el PDF del DTE: %s') % data_url_pdf_dte['error'].get('detalleRespuesta'))
             url_pdf = data_url_pdf_dte['success'].get('descripcionRespuesta').get('urlPdf')
             self.url_pdf = url_pdf
-            return True
+            return {
+                'type': 'ir.actions.act_url',
+                'url': url_pdf,
+                'target': 'new',
+            }
         else:
             raise ValidationError(_('No se ha registrado el DTE correctamente'))
     
