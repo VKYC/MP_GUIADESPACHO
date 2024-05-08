@@ -201,6 +201,6 @@ class StockPicking(models.Model):
     def get_data_to_get_pdf_dte(self):
         return {
             "rutEmisor": self.partner_id.vat,
-            "folio": self.folio,
+            "folio": str(self.folio),
             "tipoDocumento": "52"
         }
