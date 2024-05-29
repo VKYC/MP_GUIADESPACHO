@@ -15,8 +15,8 @@ class StockPicking(models.Model):
     _inherit = 'stock.picking'
     _description = 'Stock Picking'
 
-    dte_received_correctly = fields.Boolean(string='DTE Received Correctly', readonly=True, default=False, copy=False)
-    destination_partner_id = fields.Many2one('res.partner', string='Destination Partner')
+    dte_received_correctly = fields.Boolean(string='DTE recepcion', readonly=True, default=False, copy=False)
+    destination_partner_id = fields.Many2one('res.partner', string='Transportista')
     amount_total = fields.Float(string='Total Amount', default=0.0)
     url_pdf = fields.Char(string='URL PDF', readonly=True, copy=False)
     binary_pdf = fields.Binary(string='Binary PDF', readonly=True, copy=False)
@@ -104,19 +104,19 @@ class StockPicking(models.Model):
             })
         if not self.env.company.partner_id.vat:
             raise ValidationError(_('Debe ingresar un RUT del emisor.'))
-        if not self.partner_id.document_number:
+        if not self.env.company.partner_id.document_number:
             raise ValidationError(_('Debe ingresar un RUT del receptor.'))
-        if not self.partner_id.activity_description.name:
+        if not self.env.company.partner_id.activity_description.name:
             raise ValidationError(_('Debe ingresar la glosa descriptiva del receptor.'))
-        if not self.partner_id.name:
+        if not self.env.company.partner_id.name:
             raise ValidationError(_('Debe ingresar una razón social del receptor.'))
-        if not self.partner_id.street:
+        if not self.env.company.partner_id.street:
             raise ValidationError(_('Debe ingresar una dirección del receptor.'))
-        if not self.partner_id.city_id.name:
+        if not self.env.company.partner_id.city_id.name:
             raise ValidationError(_('Debe ingresar una comuna del receptor.'))
-        if not self.partner_id.city:
+        if not self.env.company.partner_id.city:
             raise ValidationError(_('Debe ingresar una ciudad del receptor.'))
-        if not self.partner_id.phone:
+        if not self.env.company.partner_id.phone:
             raise ValidationError(_('Debe ingresar el celular del receptor.'))
         if not self.destination_partner_id.document_number:
             raise ValidationError(_('Debe ingresar un RUT del transportista.'))
@@ -132,13 +132,13 @@ class StockPicking(models.Model):
             "envioSII": True,
             "Dte": [
                 {
-                    "RUTRecep": self.partner_id.document_number.replace('.', ''),
-                    "GiroRecep": self.partner_id.activity_description.name,
-                    "RznSocRecep": self.partner_id.name,
-                    "DirRecep": self.partner_id.street,
-                    "CmnaRecep": self.partner_id.city_id.name,
-                    "CiudadRecep": self.partner_id.city,
-                    "Contacto": self.partner_id.phone,
+                    "RUTRecep": self.env.company.partner_id.vat.replace('.', ''),
+                    "GiroRecep": self.env.company.partner_id.activity_description.name,
+                    "RznSocRecep": self.env.company.partner_id.name,
+                    "DirRecep": self.env.company.partner_id.street,
+                    "CmnaRecep": self.env.company.partner_id.city_id.name,
+                    "CiudadRecep": self.env.company.partner_id.city,
+                    "Contacto": self.env.company.partner_id.phone,
                     "Folio": folio,
                     "FchEmis": today,
                     "FchVenc": today,
