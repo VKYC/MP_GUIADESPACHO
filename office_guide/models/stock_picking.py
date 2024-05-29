@@ -8,16 +8,13 @@ import base64
 import io
 import logging
 
-
 _logger = logging.getLogger(__name__)
-
-
 
 
 class StockPicking(models.Model):
     _inherit = 'stock.picking'
     _description = 'Stock Picking'
-    
+
     dte_received_correctly = fields.Boolean(string='DTE Received Correctly', readonly=True, default=False, copy=False)
     destination_partner_id = fields.Many2one('res.partner', string='Destination Partner')
     amount_total = fields.Float(string='Total Amount', default=0.0)
@@ -26,7 +23,7 @@ class StockPicking(models.Model):
     filename_pdf = fields.Char(string='Filename PDF', readonly=True, copy=False)
     json_dte = fields.Text(string='JSON DTE', readonly=True, copy=False)
     folio = fields.Integer(string='Folio', readonly=True, copy=False)
-    
+
     def get_token(self, company):
         try:
             url = f'{company.office_guide_base_url}/api/login'
@@ -51,7 +48,7 @@ class StockPicking(models.Model):
             'office_guide_token': token
         })
         return token
-    
+
     def get_daily_token(self):
         company = self.env.user.company_id
         if self.env.context.get('force_token'):
@@ -61,7 +58,7 @@ class StockPicking(models.Model):
         if not company.office_guide_token or company.office_guide_expiry_date < fields.Datetime.now():
             self.get_token(company)
         return company.office_guide_token
-    
+
     def get_register_single_dte(self):
         if self.dte_received_correctly:
             raise ValidationError(_('Guía de despacho ya registrada.'))
@@ -81,13 +78,14 @@ class StockPicking(models.Model):
             if data_register_single_dte.get('codigo') == 401:
                 return self.with_context(force_token=True).get_register_single_dte()
             else:
-                raise ValidationError(_('Error al registrar el DTE: %s\n%s') % (data_register_single_dte['error'].get('detalleRespuesta'), json_dte))
+                raise ValidationError(_('Error al registrar el DTE: %s\n%s') % (
+                data_register_single_dte['error'].get('detalleRespuesta'), json_dte))
         self.dte_received_correctly = True
         folio = json_dte.get('Dte')[0].get('Folio')
         self.folio = folio
         self.json_dte = json.dumps(json_dte)
         return True
-    
+
     def get_data_to_register_single_dte(self):
         folio = self.env['caf.folio'].get_next_folio()
         today = fields.Date.to_string(fields.Date.today())
@@ -130,33 +128,32 @@ class StockPicking(models.Model):
             raise ValidationError(_('Debe ingresar una ciudad del transportista.'))
         json_dte = {
             "RUTEmisor": self.env.company.partner_id.vat.replace('.', ''),
-            "TipoDTE": "52",
+            "TipoDTE": 52,
             "envioSII": True,
             "Dte": [
                 {
                     "RUTRecep": self.partner_id.document_number.replace('.', ''),
-                    "GiroRecep":self.partner_id.activity_description.name,
+                    "GiroRecep": self.partner_id.activity_description.name,
                     "RznSocRecep": self.partner_id.name,
                     "DirRecep": self.partner_id.street,
-                    "CmnaRecep":self.partner_id.city_id.name,
-                    "CiudadRecep":self.partner_id.city,
+                    "CmnaRecep": self.partner_id.city_id.name,
+                    "CiudadRecep": self.partner_id.city,
                     "Contacto": self.partner_id.phone,
-                    "Folio": str(folio),
+                    "Folio": folio,
                     "FchEmis": today,
                     "FchVenc": today,
-                    "IndTraslado": "5",
+                    "IndTraslado": 5,
                     "RUTTrans": self.destination_partner_id.document_number.replace('.', ''),
-                    "DirDest":  self.destination_partner_id.street,
-                    "CmnaDest":  self.destination_partner_id.city_id.name,
-                    "CiudadDest":  self.destination_partner_id.city,
-                    "MntTotal" : 0,
+                    "DirDest": self.destination_partner_id.street,
+                    "CmnaDest": self.destination_partner_id.city_id.name,
+                    "CiudadDest": self.destination_partner_id.city,
+                    "MntTotal": 0,
                     "Detalle": detalle,
                 }
             ]
         }
         return json_dte, folio
-        
-        
+
     def get_binary_pdf_dte(self):
         if self.dte_received_correctly:
             company = self.env.user.company_id
@@ -173,14 +170,15 @@ class StockPicking(models.Model):
                 if data_binary_pdf_dte.get('codigo') == 401:
                     return self.with_context(force_token=True).get_binary_pdf_dte()
                 else:
-                    raise ValidationError(_('Error al obtener el PDF del DTE: %s') % data_binary_pdf_dte['error'].get('detalleRespuesta'))
+                    raise ValidationError(
+                        _('Error al obtener el PDF del DTE: %s') % data_binary_pdf_dte['error'].get('detalleRespuesta'))
             binary_pdf = data_binary_pdf_dte['success'].get('descripcionRespuesta').get('documentoPdf')
             self.binary_pdf = base64.b64decode(binary_pdf)
             self.filename_pdf = f'GuiaDespacho_{self.folio}.pdf'
             return True
         else:
             raise ValidationError(_('No se ha registrado el DTE correctamente'))
-    
+
     def get_url_pdf_dte(self):
         if self.dte_received_correctly:
             company = self.env.user.company_id
@@ -197,7 +195,8 @@ class StockPicking(models.Model):
                 if data_url_pdf_dte.get('codigo') == 401:
                     return self.with_context(force_token=True).get_url_pdf_dte()
                 else:
-                    raise ValidationError(_('Error al obtener el PDF del DTE: %s') % data_url_pdf_dte['error'].get('detalleRespuesta'))
+                    raise ValidationError(
+                        _('Error al obtener el PDF del DTE: %s') % data_url_pdf_dte['error'].get('detalleRespuesta'))
             url_pdf = data_url_pdf_dte['success'].get('descripcionRespuesta').get('urlPdf')
             self.url_pdf = url_pdf
             return {
@@ -207,7 +206,7 @@ class StockPicking(models.Model):
             }
         else:
             raise ValidationError(_('No se ha registrado el DTE correctamente'))
-    
+
     def get_data_to_get_pdf_dte(self):
         return {
             'rutEmisor': self.env.company.partner_id.vat.replace('.', ''),
