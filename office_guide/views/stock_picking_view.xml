@@ -6,8 +6,8 @@
         <field name="inherit_id" ref="stock.view_picking_form"/>
         <field name="arch" type="xml">
             <xpath expr="//header" position="inside">
-                <button name="get_register_single_dte" type="object" string="Registrar DTE" attrs="{'invisible': ['|', ('state', '!=', 'done'), ('dte_received_correctly', '=', True)]}"/>
-                <button name="get_url_pdf_dte" type="object" string="Get url PDF" attrs="{'invisible': ['|', ('state', '!=', 'done'), ('dte_received_correctly', '=', False)]}"/>
+                <button name="get_register_single_dte" type="object" string="Registrar guia de despacho" attrs="{'invisible': ['|', ('state', '!=', 'done'), ('dte_received_correctly', '=', True)]}"/>
+                <button name="get_url_pdf_dte" type="object" string="Ver guia de despacho" attrs="{'invisible': ['|', ('state', '!=', 'done'), ('dte_received_correctly', '=', False)]}"/>
                 <!-- <button name="get_binary_pdf_dte" type="object" string="Get PDF" attrs="{'invisible': ['|', ('state', '!=', 'done'), ('dte_received_correctly', '=', False)]}"/> -->
             </xpath>
             <xpath expr="//notebook" position="inside">
